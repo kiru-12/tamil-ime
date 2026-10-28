@@ -12,3 +12,7 @@ wheels/
 # Runtime files (log contains converted chat text)
 tamil_ime.log
 tamil_ime.pid
+
+# Local network settings and Claude stderr
+proxy.env
+claude_worker.log

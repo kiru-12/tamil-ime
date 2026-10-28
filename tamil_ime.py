@@ -49,8 +49,27 @@ SYSTEM_PROMPT = (
 
 HERE = Path(__file__).resolve().parent
 LOG = HERE / "tamil_ime.log"
+CLAUDE_LOG = HERE / "claude_worker.log"  # stderr of the hidden Claude Code process
 PIDFILE = HERE / "tamil_ime.pid"
+PROXY_ENV = HERE / "proxy.env"
 CLAUDE = shutil.which("claude") or "claude"
+
+
+def worker_env() -> dict[str, str]:
+    """Environment for the Claude process.
+
+    When launched from Explorer / Startup, the process does not inherit the
+    proxy variables that a corporate network needs, so Claude Code cannot reach
+    Anthropic and exits. proxy.env (KEY=VALUE lines) fills them in.
+    """
+    env = dict(os.environ)
+    if PROXY_ENV.exists():
+        for line in PROXY_ENV.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, v = line.split("=", 1)
+                env.setdefault(k.strip(), v.strip())
+    return env
 
 logging.basicConfig(
     filename=LOG, level=logging.INFO, encoding="utf-8",
@@ -84,9 +103,10 @@ class ClaudeWorker:
         ]
         # No shell=True: launching the .exe directly means terminate()/taskkill hit
         # the real process instead of an intermediate cmd.exe, so no orphans.
+        self.stderr_file = open(CLAUDE_LOG, "a", encoding="utf-8")
         self.proc = subprocess.Popen(
-            cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
-            text=True, encoding="utf-8", bufsize=1,
+            cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=self.stderr_file,
+            text=True, encoding="utf-8", bufsize=1, env=worker_env(),
             creationflags=subprocess.CREATE_NO_WINDOW,
         )
         self.events: queue.Queue[str] = queue.Queue()
@@ -152,6 +172,10 @@ class ClaudeWorker:
                 ["taskkill", "/PID", str(self.proc.pid), "/T", "/F"],
                 capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW,
             )
+        try:
+            self.stderr_file.close()
+        except Exception:
+            pass
 
 
 class WorkerPool:

@@ -41,6 +41,14 @@ uv run tamil_ime.py
 Press Win+R, type `shell:startup`, press Enter, and copy `start_tamil_ime.vbs` into
 the folder that opens. Delete it from there to undo.
 
+## Corporate proxy
+
+If your network needs a proxy, copy `proxy.env.example` to `proxy.env` and fill in the
+values. Programs started from Explorer or the Startup folder do not inherit proxy settings
+that only exist in a terminal, so without this file the hidden Claude Code process cannot
+reach Anthropic and every conversion fails with a low beep. Claude's own error output is
+written to `claude_worker.log`.
+
 ## Notes
 
 - Text you convert is sent to Anthropic through Claude Code. Fine for casual Tamil chat;
