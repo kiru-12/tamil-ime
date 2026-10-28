@@ -19,8 +19,13 @@ Teams compose box --Ctrl+A, Ctrl+C--> script --stdin JSON--> headless Claude Cod
 
 The script keeps one `claude -p` process alive in streaming JSON mode and sends each
 conversion as a message. This uses your Claude Code login (no API key) and pays the
-~20 s startup once. Conversions then take about 3 to 8 seconds. The process is recycled
+~15 s startup once. Conversions then take about 2 seconds. The process is recycled
 every 40 conversions, with its replacement pre-warmed, so context never piles up.
+
+Where the time goes, measured: about 1 s is the model, about 1 s is the request round
+trip. Claude Code also does ~2 s of bookkeeping after each answer; the script returns
+as soon as the answer text arrives rather than waiting for that. Phrases you have
+converted before are served from an in-memory cache instantly.
 
 ## Run
 

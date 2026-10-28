@@ -112,6 +112,7 @@ class ClaudeWorker:
         self.events: queue.Queue[str] = queue.Queue()
         self.io_lock = threading.Lock()
         self.turns = 0
+        self.pending_results = 0  # 'result' events still owed from early-returned turns
         self.warm = threading.Event()
         threading.Thread(target=self._pump, daemon=True).start()
         if warm:
@@ -136,8 +137,29 @@ class ClaudeWorker:
     def alive(self) -> bool:
         return self.proc.poll() is None
 
+    def _drain(self) -> None:
+        """Discard events left over from the previous turn (its trailing 'result')."""
+        while True:
+            try:
+                line = self.events.get_nowait()
+            except queue.Empty:
+                return
+            try:
+                if json.loads(line).get("type") == "result" and self.pending_results > 0:
+                    self.pending_results -= 1
+            except json.JSONDecodeError:
+                pass
+
+    @staticmethod
+    def _clean(out: str) -> str:
+        out = out.strip()
+        if len(out) >= 2 and out[0] == out[-1] and out[0] in "\"'":
+            out = out[1:-1]
+        return out
+
     def ask(self, text: str, count: bool = True) -> str:
         with self.io_lock:  # one request in flight per process
+            self._drain()
             msg = {"type": "user", "message": {"role": "user", "content": text}}
             self.proc.stdin.write(json.dumps(msg) + "\n")
             self.proc.stdin.flush()
@@ -149,16 +171,28 @@ class ClaudeWorker:
                     if not self.alive():
                         raise RuntimeError("claude process exited")
                     continue
-                if ev.get("type") != "result":
-                    continue
-                if count:
-                    self.turns += 1
-                if ev.get("is_error"):
-                    raise RuntimeError(ev.get("result") or "claude returned an error")
-                out = (ev.get("result") or "").strip()
-                if len(out) >= 2 and out[0] == out[-1] and out[0] in "\"'":
-                    out = out[1:-1]
-                return out
+                kind = ev.get("type")
+                # Events arrive strictly in order: assistant_1, result_1, assistant_2, ...
+                # The assistant message carries the full answer ~2s before the
+                # 'result' bookkeeping event, so we return on it and remember that
+                # one 'result' is still owed; that stale result is skipped here.
+                if kind == "result":
+                    if self.pending_results > 0:
+                        self.pending_results -= 1
+                        continue
+                    if count:
+                        self.turns += 1
+                    if ev.get("is_error"):
+                        raise RuntimeError(ev.get("result") or "claude returned an error")
+                    return self._clean(ev.get("result") or "")
+                if kind == "assistant":
+                    blocks = ev.get("message", {}).get("content", [])
+                    text_out = "".join(b.get("text", "") for b in blocks if b.get("type") == "text")
+                    if text_out.strip():
+                        if count:
+                            self.turns += 1
+                        self.pending_results += 1
+                        return self._clean(text_out)
             raise TimeoutError("no reply from claude")
 
     def close(self) -> None:
@@ -215,6 +249,8 @@ class WorkerPool:
 
 
 pool: WorkerPool | None = None
+CACHE_SIZE = 500
+cache: dict[str, str] = {}  # repeated phrases ("vanakkam") convert instantly
 
 
 # --------------------------------------------------------------------------- #
@@ -299,7 +335,14 @@ def convert_active_field() -> None:
             return
 
         t0 = time.time()
-        tamil = pool.ask(source)
+        key = " ".join(source.split()).lower()
+        tamil = cache.get(key)
+        if tamil is None:
+            tamil = pool.ask(source)
+            if tamil:
+                cache[key] = tamil
+                if len(cache) > CACHE_SIZE:
+                    cache.pop(next(iter(cache)))
         logging.info("%.1fs  %s -> %s", time.time() - t0, source[:80].replace("\n", " / "), tamil[:80].replace("\n", " / "))
         if not tamil:
             beep(False)
@@ -307,7 +350,7 @@ def convert_active_field() -> None:
 
         clip_set(tamil)
         chord(keyboard.Key.ctrl, "v")
-        time.sleep(0.4)  # let the app finish reading the clipboard before we restore it
+        time.sleep(0.25)  # let the app finish reading the clipboard before we restore it
         beep(True)
     except Exception as e:
         logging.exception("conversion failed: %s", e)
