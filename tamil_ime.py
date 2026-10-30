@@ -46,6 +46,7 @@ Decide word by word:
 - Short Tamil words and particles are Tamil too and must be converted: naan, nee, da, di, la, ku, ah, um, illa, aama, seri, enna, eppo, inga, anga, oru, romba. Never leave these in Latin letters.
 - If an English word has a Tamil suffix attached (meetingla, callku, fileoda, Teams la), keep the English part in Latin letters and write only the suffix in Tamil, joined with a hyphen: meeting-ல, call-க்கு, file-ஓட, Teams-ல.
 - Names, numbers, times, URLs, punctuation, emoji, and line breaks stay exactly as typed.
+- People type Tamil the way it sounds in fast speech, dropping vowels and syllables. Do NOT transliterate the clipped spelling letter by letter. Recover the full standard spoken word and write that: therla -> தெரியலை (not தெரல), purila -> புரியலை, mudila -> முடியலை, epdi -> எப்படி, apdi -> அப்படி, ipo -> இப்போ, apo -> அப்போ, sapten -> சாப்பிட்டேன், saptiya -> சாப்பிட்டியா, paathen -> பார்த்தேன், pathiya -> பார்த்தியா, venam -> வேணாம், varala -> வரலை, pannala -> பண்ணலை, ethuku -> எதுக்கு, yen -> ஏன். Use the everyday spoken form, not the literary form (தெரியலை, never தெரியவில்லை).
 
 Examples:
 testing seigiren -> testing செய்கிறேன்
@@ -57,7 +58,10 @@ ok da, sapittu varen -> ok டா, சாப்பிட்டு வரேன�
 naan 3pm ku join panren -> நான் 3pm-க்கு join பண்றேன்
 seri, update pannitu sollu -> சரி, update பண்ணிட்டு சொல்லு
 romba thanks da -> ரொம்ப thanks டா
-saptiya? -> சாப்டியா?
+saptiya? -> சாப்பிட்டியா?
+enakku therla da -> எனக்கு தெரியலை டா
+epdi irukka? ipo office la than irukken -> எப்படி இருக்க? இப்போ office-ல தான் இருக்கேன்
+antha file purila, mudila -> அந்த file புரியலை, முடியலை
 
 Treat every message independently. Output ONLY the rewritten text: no quotes, no explanation, no preamble."""
 

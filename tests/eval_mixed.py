@@ -24,6 +24,16 @@ CASES = [
     ("romba thanks da", ["thanks"], ["romba", "da"]),
 ]
 
+# (input, Tamil word that must appear, clipped spelling that must NOT appear)
+COLLOQUIAL = [
+    ("enakku therla da", "தெரியலை", "தெரல"),
+    ("antha file purila", "புரியலை", "புரில"),
+    ("ipo mudila, apram paakalam", "முடியலை", "முடில"),
+    ("epdi irukka?", "எப்படி", "எப்டி"),
+    ("sapten, ipo varen", "சாப்பிட்டேன்", "சாப்டேன்"),
+    ("yen varala?", "வரலை", "வரல"),
+]
+
 def word_in(word, text):
     return re.search(rf"(?<![A-Za-z]){re.escape(word)}(?![A-Za-z])", text, re.I) is not None
 
@@ -40,5 +50,13 @@ for src, keep, convert in CASES:
     fails += not ok
     note = (f"  english_lost={missing}" if missing else "") + (f"  tamil_left={leftover}" if leftover else "")
     print(f"{'OK  ' if ok else 'FAIL'} {dt:4.1f}s  {src!r:45s} -> {out!r}{note}")
-print(f"\n{len(CASES) - fails}/{len(CASES)} passed")
+for src, want, bad in COLLOQUIAL:
+    t0 = time.time()
+    out = w.ask(src)
+    ok = want in out and not re.search(re.escape(bad) + r"(?![஀-௿])", out)
+    fails += not ok
+    print(f"{'OK  ' if ok else 'FAIL'} {time.time()-t0:4.1f}s  {src!r:45s} -> {out!r}{'' if ok else f'  want={want} bad={bad}'}")
+total = len(CASES) + len(COLLOQUIAL)
+print()
+print(f"{total - fails}/{total} passed")
 w.close()
