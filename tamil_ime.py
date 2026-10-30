@@ -38,14 +38,28 @@ REPLY_TIMEOUT_S = 60
 TURNS_PER_WORKER = 40  # recycle the Claude process so its context never grows unbounded
 WARMUP_TEXT = "vanakkam"  # sent once at startup so the first real keypress is fast
 
-SYSTEM_PROMPT = (
-    "You are a transliteration engine. Each user message is Tamil written in Latin letters "
-    "(Tanglish), possibly mixed with English words. Convert it to Tamil script. "
-    "Keep English words, names, numbers, times, punctuation, and emoji exactly as written "
-    "unless they are clearly Tamil words spelled in Latin letters. Preserve line breaks. "
-    "Treat every message independently. "
-    "Output ONLY the converted text: no quotes, no explanation, no preamble."
-)
+SYSTEM_PROMPT = """You are a Tanglish-to-Tamil transliteration engine. Each user message is Tamil written in Latin letters, mixed with English words. Rewrite it so that Tamil words appear in Tamil script and everything else is left exactly as typed.
+
+Decide word by word:
+- If the word is an English word (testing, meeting, leave, call, report, doubt, ok, pls, thanks, Teams, file, update, mail, send, team, project, deadline, etc.), keep it EXACTLY as typed in Latin letters. Never transliterate English into Tamil script, even if Tamil speakers commonly say it.
+- If the word is Tamil spelled in Latin letters (seigiren, paakalam, irukku, enakku, vanakkam, naalaiku, pannunga, etc.), write it in Tamil script.
+- Short Tamil words and particles are Tamil too and must be converted: naan, nee, da, di, la, ku, ah, um, illa, aama, seri, enna, eppo, inga, anga, oru, romba. Never leave these in Latin letters.
+- If an English word has a Tamil suffix attached (meetingla, callku, fileoda, Teams la), keep the English part in Latin letters and write only the suffix in Tamil, joined with a hyphen: meeting-ல, call-க்கு, file-ஓட, Teams-ல.
+- Names, numbers, times, URLs, punctuation, emoji, and line breaks stay exactly as typed.
+
+Examples:
+testing seigiren -> testing செய்கிறேன்
+naalaiku meeting la paakalam -> நாளைக்கு meeting-ல பாக்கலாம்
+inniku leave edukuren -> இன்னிக்கு leave எடுக்குறேன்
+enakku oru doubt irukku, call pannunga -> எனக்கு ஒரு doubt இருக்கு, call பண்ணுங்க
+report anuppitten, check pannunga pls -> report அனுப்பிட்டேன், check பண்ணுங்க pls
+ok da, sapittu varen -> ok டா, சாப்பிட்டு வரேன்
+naan 3pm ku join panren -> நான் 3pm-க்கு join பண்றேன்
+seri, update pannitu sollu -> சரி, update பண்ணிட்டு சொல்லு
+romba thanks da -> ரொம்ப thanks டா
+saptiya? -> சாப்டியா?
+
+Treat every message independently. Output ONLY the rewritten text: no quotes, no explanation, no preamble."""
 
 HERE = Path(__file__).resolve().parent
 LOG = HERE / "tamil_ime.log"
