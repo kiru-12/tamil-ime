@@ -1,7 +1,13 @@
 # Tamil IME (Claude-powered)
 
-Type Tanglish in any text box (Teams, Outlook, browser...), press **Ctrl+Alt+T**,
-and the text is replaced in place with Tamil script. You still press Enter yourself.
+A system-wide Tanglish-to-Tamil input method for Windows. Type Tanglish in any text
+field of any application (Teams, Outlook, Word, browsers, Notepad, Slack...), press
+**Ctrl+Alt+T**, and the text is replaced in place with Tamil script. It works anywhere
+Ctrl+C / Ctrl+V work, because that is all it uses. You still press Enter yourself.
+
+English words stay in Latin script ("testing seigiren" -> "testing செய்கிறேன்"), Tamil
+suffixes on English words are hyphenated ("meeting la" -> "meeting-ல"), and clipped speech
+spellings are expanded to the full spoken word ("therla" -> "தெரியலை").
 
 | Key | Action |
 |---|---|
@@ -14,7 +20,7 @@ Details are in `tamil_ime.log`.
 ## How it works
 
 ```
-Teams compose box --Ctrl+A, Ctrl+C--> script --stdin JSON--> headless Claude Code --> Tamil --Ctrl+V--> Teams
+any text field --Ctrl+A, Ctrl+C--> script --stdin JSON--> headless Claude Code --> Tamil --Ctrl+V--> same text field
 ```
 
 The script keeps one `claude -p` process alive in streaming JSON mode and sends each
